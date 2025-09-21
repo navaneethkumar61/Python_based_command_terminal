@@ -43,7 +43,10 @@ def execute_command(command):
     cwd = get_current_dir()
 
     try:
-        if cmd == "pwd":
+        if cmd == "help":
+            return "Available commands: pwd, ls, cd, mkdir, rm, rmdir, cpu, mem, ps", ""
+            
+        elif cmd == "pwd":
             return cwd, ""
 
         elif cmd == "ls":
