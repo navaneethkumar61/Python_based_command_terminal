@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>PyTerm</title>
+<style>
+    body {
+        background-color: #1e1e1e;
+        color: #00ff00;
+        font-family: 'Courier New', Courier, monospace;
+        margin: 0;
+        padding: 0;
+    }
+    #terminal {
+        padding: 20px;
+        height: 95vh;
+        overflow-y: auto;
+        white-space: pre-wrap;
+    }
+    .input-line {
+        display: flex;
+    }
+    .prompt {
+        margin-right: 5px;
+        font-weight: bold;
+    }
+    input.command-input {
+        background: none;
+        border: none;
+        color: #00ff00;
+        flex: 1;
+        outline: none;
+        font-family: 'Courier New', Courier, monospace;
+        font-size: 16px;
+    }
+    .output {
+        margin-bottom: 10px;
+    }
+</style>
+</head>
+<body>
+<div id="terminal"></div>
+<script>
+let terminal = document.getElementById("terminal");
+
+function addLine(text, className="output") {
+    let div = document.createElement("div");
+    div.className = className;
+    div.textContent = text;
+    terminal.appendChild(div);
+    terminal.scrollTop = terminal.scrollHeight;
+}
+
+function addInputLine(cwd) {
+    let div = document.createElement("div");
+    div.className = "input-line";
+    let prompt = document.createElement("span");
+    prompt.className = "prompt";
+    prompt.textContent = cwd + " $";
+    let input = document.createElement("input");
+    input.className = "command-input";
+    input.autofocus = true;
+    input.addEventListener("keydown", async function(e){
+        if(e.key === "Enter"){
+            let command = input.value;
+            input.disabled = true;
+            let response = await fetch("/command", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({command})
+            });
+            let data = await response.json();
+            if(data.output) addLine(data.output);
+            if(data.error) addLine("Error: " + data.error);
+            addInputLine(data.cwd);
+        }
+    });
+    div.appendChild(prompt);
+    div.appendChild(input);
+    terminal.appendChild(div);
+    input.focus();
+    terminal.scrollTop = terminal.scrollHeight;
+}
+
+// ✅ Fetch initial cwd from backend instead of hardcoding
+async function initTerminal() {
+    let response = await fetch("/command", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({command: "pwd"})
+    });
+    let data = await response.json();
+    addInputLine(data.cwd);
+}
+
+initTerminal();
+</script>
+</body>
+</html>
